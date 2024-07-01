@@ -11,7 +11,9 @@ const indexRestaurant = async function (req, res) {
         {
           model: ProductCategory,
           as: 'productCategory'
-        }]
+        }],
+      // SOLUCION
+      order: [['applicable', 'DESC']]
     })
     res.json(products)
   } catch (err) {
@@ -27,7 +29,9 @@ const show = async function (req, res) {
         {
           model: ProductCategory,
           as: 'productCategory'
-        }]
+        }],
+      // SOLUCION
+      order: [['applicable', 'DESC']]
     }
     )
     res.json(product)
@@ -106,13 +110,47 @@ const popular = async function (req, res) {
     res.status(500).send(err)
   }
 }
-
+// SOLUCION
+/*
+const promote = async function (req, res) {
+  try {
+    const t = sequelizeSession.transaction()
+    const productToBeUpdated = await Product.findByPk(req.params.productId)
+    if (productToBeUpdated.applicable === true) {
+      await Product.update({ applicable: false }, { where: { id: productToBeUpdated.id } }, { transaction: t })
+    } else {
+      await Product.update({ applicable: true }, { where: { id: productToBeUpdated.id } }, { transaction: t })
+    }
+    await t.commit()
+    const updatedProduct = await Product.findByPk(req.params.productId)
+    res.json(updatedProduct)
+  } catch (err) {
+    res.status(500).send(err)
+  }
+} */
+const promote = async function (req, res) {
+  try {
+    const productToBeUpdated = await Product.findByPk(req.params.productId)
+    if (productToBeUpdated.applicable === true) {
+      await Product.update({ applicable: false }, { where: { id: productToBeUpdated.id } })
+      const updatedProduct = await Product.findByPk(req.params.productId)
+      res.json(updatedProduct)
+    } else {
+      await Product.update({ applicable: true }, { where: { id: productToBeUpdated.id } })
+      const updatedProduct = await Product.findByPk(req.params.productId)
+      res.json(updatedProduct)
+    }
+  } catch (err) {
+    res.status(500).send(err)
+  }
+}
 const ProductController = {
   indexRestaurant,
   show,
   create,
   update,
   destroy,
-  popular
+  popular,
+  promote
 }
 export default ProductController

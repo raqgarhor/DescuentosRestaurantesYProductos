@@ -4,7 +4,7 @@ import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'r
 import { showMessage } from 'react-native-flash-message'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { getDetail } from '../../api/RestaurantEndpoints'
-import { remove } from '../../api/ProductEndpoints'
+import { promote, remove } from '../../api/ProductEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextRegular from '../../components/TextRegular'
 import TextSemiBold from '../../components/TextSemibold'
@@ -53,19 +53,71 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
       </View>
     )
   }
+  const setProductToBePromoted = async (product) => {
+    try {
+      await promote(product.id)
+      await fetchRestaurantDetail()
+      showMessage({
+        message: `Product ${product.name} succesfully promoted`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      console.log(error)
+      showMessage({
+        message: `Product ${product.name} could not be promoted.`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+  // SOLUCION
+  const renderCardTitle = (item) => {
+    return (<>
+        <TextSemiBold style={{ fontSize: 15 }}>{item.name}</TextSemiBold>
+         <TextSemiBold style={{ marginLeft: 5, fontSize: 15, color: GlobalStyles.brandPrimary }}>{!item.applicable ? '(' + restaurant.discount + '% OFF!)' : ''}</TextSemiBold>
+      </>)
+  }
+  const finalP = (item) => {
+    return item.price - ((restaurant.discount * item.price) / 100)
+  }
 
   const renderProduct = ({ item }) => {
     return (
       <ImageCard
         imageUri={item.image ? { uri: process.env.API_BASE_URL + '/' + item.image } : defaultProductImage}
-        title={item.name}
+        title={renderCardTitle(item)}
       >
         <TextRegular numberOfLines={2}>{item.description}</TextRegular>
+
         <TextSemiBold textStyle={styles.price}>{item.price.toFixed(2)}€</TextSemiBold>
+        {item.applicable &&
+        <TextSemiBold textStyle={styles.price}>Final price:{finalP(item.price)}€</TextSemiBold>
+        }
         {!item.availability &&
           <TextRegular textStyle={styles.availability }>Not available</TextRegular>
         }
          <View style={styles.actionButtonsContainer}>
+         {restaurant.discount > 0 &&
+         <Pressable
+            onPress={() => { setProductToBePromoted(item) }}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandGreenTap
+                  : GlobalStyles.brandGreen
+              },
+              styles.actionButton
+            ]}>
+          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+            <MaterialCommunityIcons name={item.applicable ? 'star' : 'star-outline'} color={'white'} size={20}/>
+            <TextRegular textStyle={styles.text}>
+              {item.applicable ? 'Demote' : 'Promote'}
+            </TextRegular>
+          </View>
+        </Pressable>}
           <Pressable
             onPress={() => navigation.navigate('EditProductScreen', { id: item.id })
             }
@@ -243,6 +295,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     bottom: 5,
     position: 'absolute',
-    width: '90%'
+    width: '63%'
   }
 })

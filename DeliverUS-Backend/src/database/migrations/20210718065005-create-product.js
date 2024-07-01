@@ -57,6 +57,11 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: new Date()
+      },
+      applicable: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
       }
     })
   },
